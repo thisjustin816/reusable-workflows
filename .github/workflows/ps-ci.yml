@@ -5,7 +5,7 @@ on:
     inputs:
       publish:
         description: 'Publish the module to the PowerShell Gallery'
-        default: false
+        default: 'false'
         type: boolean
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
 
       - name: Publish to PowerShell Gallery
         id: publish
-        if: success() && (github.event.inputs.publish == true || github.ref == 'refs/heads/main')
+        if: success() && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
         shell: pwsh
         run: |
           ./publish.ps1
