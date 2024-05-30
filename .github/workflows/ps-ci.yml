@@ -65,6 +65,11 @@ jobs:
           fail_below_threshold: false
           only_changed_files: true
 
+      - name: Print Publish Conditional Variables
+        run: |
+          echo "Publish input: ${{ github.event.inputs.publish }}"
+          echo "GitHub ref: ${{ github.ref }}"
+
       - name: publish
         id: publish
         if: success() && (github.event.inputs.publish == true || github.ref == 'refs/heads/main')
