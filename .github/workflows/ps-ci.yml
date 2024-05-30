@@ -11,11 +11,6 @@ on:
 
 jobs:
   build:
-    permissions:
-      checks: write # Needed for publishing test results
-      contents: write # Needed for tagging with the released version
-      pull-requests: write # Needed for publishing test results
-
     runs-on: windows-latest
 
     steps:
