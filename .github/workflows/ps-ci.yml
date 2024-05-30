@@ -5,7 +5,7 @@ on:
     inputs:
       publish:
         description: 'Publish the module to the PowerShell Gallery'
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
