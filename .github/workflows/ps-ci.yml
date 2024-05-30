@@ -62,7 +62,7 @@ jobs:
 
       - name: Publish to PowerShell Gallery
         id: publish
-        if: success() && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
+        # if: success() && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
         shell: pwsh
         run: |
           if (
