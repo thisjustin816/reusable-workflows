@@ -55,11 +55,6 @@ jobs:
           fail_below_threshold: false
           only_changed_files: true
 
-      - name: Print Publish Conditional Variables
-        run: |
-          echo "Publish input: ${{ github.event.inputs.publish }}"
-          echo "GitHub ref: ${{ github.ref }}"
-
       - name: Check for Published Module
         shell: pwsh
         run: |
@@ -69,10 +64,10 @@ jobs:
               -Repository PSGallery `
               -ErrorAction SilentlyContinue
           if ($publishedModule) {
-              throw "Module $publishedModule already exists in the PSGallery"
+              throw "${{ steps.build.outputs.moduleName }} ${{ steps.build.outputs.moduleVersion }} already exists in the PSGallery"
           }
           else {
-              Write-Host -Object "Module $publishedModule not found in the PSGallery"
+              Write-Host -Object "${{ steps.build.outputs.moduleName }} ${{ steps.build.outputs.moduleVersion }} not found in the PSGallery"
           }
 
       - name: Publish to PowerShell Gallery
