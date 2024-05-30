@@ -2,11 +2,6 @@ name: CI
 
 on:
   workflow_call:
-    inputs:
-      publish:
-        description: 'Publish the module to the PowerShell Gallery'
-        default: false
-        type: boolean
 
 jobs:
   build:
@@ -70,6 +65,12 @@ jobs:
         if: success() && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
         shell: pwsh
         run: |
+          if (
+              ('${{ github.ref }}' -ne 'refs/heads/main') -and
+              ('${{ steps.build.outputs.moduleVersion }}' -notmatch 'preview')
+          ) {
+              throw "Only preview versions can be published from non-main branches."
+          }
           ./publish.ps1
         env:
           PSGALLERYAPIKEY: ${{ secrets.PSGALLERYAPIKEY }}
