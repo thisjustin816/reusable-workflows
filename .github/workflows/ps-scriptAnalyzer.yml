@@ -14,9 +14,11 @@ on:
 
 permissions:
   contents: read
+  security-events: write
+  actions: read
 
 jobs:
-  build:
+  analyze:
     name: PSScriptAnalyzer
     runs-on: windows-latest
     steps:
