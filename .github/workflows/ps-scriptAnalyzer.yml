@@ -36,4 +36,4 @@ jobs:
         if: always()
         with:
           sarif_file: results.sarif
-          token: ${{ secrets.SECURITY_KEY }}
+          token: ${{ secrets.GITHUB_TOKEN }}
