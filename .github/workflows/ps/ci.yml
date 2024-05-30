@@ -2,6 +2,12 @@ name: CI
 
 on:
   workflow_call:
+    inputs:
+      publish:
+        description: 'Publish the module to the PowerShell Gallery'
+        required: true
+        default: 'false'
+        type: boolean
 
 jobs:
   build:
@@ -67,7 +73,7 @@ jobs:
 
       - name: publish
         id: publish
-        if: success() #&& github.ref == 'refs/heads/main'
+        if: success() && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
         shell: pwsh
         run: |
           ./publish.ps1
