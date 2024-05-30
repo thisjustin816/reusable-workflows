@@ -62,14 +62,14 @@ jobs:
 
       - name: Check for Published Module
         shell: pwsh
-        run:
+        run: |
           $publishedModule = Find-PSResource `
               -Name '${{ steps.build.outputs.moduleName }}' `
               -Version '${{ steps.build.outputs.moduleVersion }}' `
               -Repository PSGallery `
               -ErrorAction SilentlyContinue
           if ($publishedModule) {
-              throw "${{ steps.build.outputs.moduleName }} ${{ steps.build.outputs.moduleVersion }} is already published to the PowerShell Gallery."
+              throw "Module $publishedModule already exists in the PSGallery"
           }
 
       - name: Publish to PowerShell Gallery
