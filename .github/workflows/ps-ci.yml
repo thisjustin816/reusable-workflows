@@ -60,6 +60,18 @@ jobs:
           echo "Publish input: ${{ github.event.inputs.publish }}"
           echo "GitHub ref: ${{ github.ref }}"
 
+      - name: Check for Published Module
+        shell: pwsh
+        run:
+          $publishedModule = Find-PSResource `
+              -Name '${{ steps.build.outputs.moduleName }}' `
+              -Version '${{ steps.build.outputs.moduleVersion }}' `
+              -Repository PSGallery `
+              -ErrorAction SilentlyContinue
+          if ($publishedModule) {
+              throw "${{ steps.build.outputs.moduleName }} ${{ steps.build.outputs.moduleVersion }} is already published to the PowerShell Gallery."
+          }
+
       - name: Publish to PowerShell Gallery
         id: publish
         if: success() && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
