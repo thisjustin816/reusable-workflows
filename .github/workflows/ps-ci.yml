@@ -71,6 +71,9 @@ jobs:
           if ($publishedModule) {
               throw "Module $publishedModule already exists in the PSGallery"
           }
+          else {
+              Write-Host -Object "Module $publishedModule not found in the PSGallery"
+          }
 
       - name: Publish to PowerShell Gallery
         id: publish
