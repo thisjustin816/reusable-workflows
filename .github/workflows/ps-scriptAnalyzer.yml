@@ -18,7 +18,7 @@ permissions:
   actions: read
 
 jobs:
-  analyze:
+  build:
     name: PSScriptAnalyzer
     runs-on: windows-latest
     steps:
