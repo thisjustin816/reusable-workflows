@@ -18,10 +18,10 @@ jobs:
           $build
 
           $moduleName = $build[1].Name
-          echo "::set-output name=moduleName::$moduleName"
+          echo "moduleName=$moduleName" >> $env:GITHUB_OUTPUT
 
           $moduleVersion = $build[1].ModuleBase | Split-Path -Leaf
-          echo "::set-output name=moduleVersion::$moduleVersion"
+          echo "moduleVersion=$moduleVersion" >> $env:GITHUB_OUTPUT
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/windows@v2
