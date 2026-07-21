@@ -11,6 +11,22 @@ name: PSScriptAnalyzer
 
 on:
   workflow_call:
+    inputs:
+      path:
+        description: Source path to analyze.
+        required: false
+        type: string
+        default: 'src'
+      settings:
+        description: Optional caller-relative settings path; defaults to the settings bundled with PSModuleUtils.
+        required: false
+        type: string
+        default: ''
+      use_local_psmoduleutils:
+        description: Loads analyzer commands from the caller checkout when validating PSModuleUtils itself.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,11 +41,74 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run PSScriptAnalyzer
-        uses: microsoft/psscriptanalyzer-action@v1.1
-        with:
-          path: .\
-          recurse: true
-          output: results.sarif
+        shell: pwsh
+        env:
+          INPUT_PATH: ${{ inputs.path }}
+          INPUT_SETTINGS: ${{ inputs.settings }}
+          USE_LOCAL_PSMODULEUTILS: ${{ inputs.use_local_psmoduleutils }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          if ($env:USE_LOCAL_PSMODULEUTILS -eq 'true') {
+              $scriptAnalyzerSpecification = @{
+                  ModuleName     = 'PSScriptAnalyzer'
+                  ModuleVersion  = '1.20.0'
+                  MaximumVersion = '1.*'
+              }
+              if (-not (Get-Module -ListAvailable -FullyQualifiedName $scriptAnalyzerSpecification)) {
+                  Install-Module `
+                      -Name 'PSScriptAnalyzer' `
+                      -MinimumVersion '1.20.0' `
+                      -MaximumVersion '1.*' `
+                      -Scope CurrentUser `
+                      -Force `
+                      -ErrorAction Stop
+              }
+              Import-Module -FullyQualifiedName $scriptAnalyzerSpecification -Force -ErrorAction Stop
+
+              @(
+                  'src/Private/Get-PSModuleAnalyzerSettingsPath.ps1'
+                  'src/Private/Invoke-PSModuleAnalyzerCasingWorkaround.ps1'
+                  'src/Public/Export-PSModuleAnalyzerSettings.ps1'
+                  'src/Public/Invoke-PSModuleAnalyzer.ps1'
+              ) | ForEach-Object { . $_ }
+          }
+          else {
+              $moduleSpecification = @{
+                  ModuleName     = 'PSModuleUtils'
+                  ModuleVersion  = '2.0.0'
+                  MaximumVersion = '2.*'
+              }
+              if (-not (Get-Module -ListAvailable -FullyQualifiedName $moduleSpecification)) {
+                  Install-Module `
+                      -Name 'PSModuleUtils' `
+                      -MinimumVersion '2.0.0' `
+                      -MaximumVersion '2.*' `
+                      -Scope CurrentUser `
+                      -Force `
+                      -ErrorAction Stop
+              }
+              Import-Module -FullyQualifiedName $moduleSpecification -Force -ErrorAction Stop
+          }
+
+          if (-not (Get-Module -ListAvailable -Name 'ConvertToSARIF')) {
+              Install-Module -Name 'ConvertToSARIF' -Scope CurrentUser -Force -ErrorAction Stop
+          }
+          Import-Module -Name 'ConvertToSARIF' -Force -ErrorAction Stop
+
+          if ($env:INPUT_SETTINGS) {
+              $settingsPath = $env:INPUT_SETTINGS
+          }
+          else {
+              $settingsPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath 'PSScriptAnalyzerSettings.psd1'
+              Export-PSModuleAnalyzerSettings -Path $settingsPath -Force
+          }
+
+          Invoke-PSModuleAnalyzer `
+              -SourceDirectory $env:INPUT_PATH `
+              -Settings $settingsPath `
+              -NoExit |
+              ConvertTo-SARIF -FilePath 'results.sarif'
 
       - name: Upload SARIF results file
         uses: github/codeql-action/upload-sarif@v3

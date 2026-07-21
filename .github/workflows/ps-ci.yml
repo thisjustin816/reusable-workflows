@@ -10,6 +10,48 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Module Dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $manifestPath = Get-ChildItem -Path 'src' -Filter '*.psd1' -File |
+              Select-Object -First 1 -ExpandProperty FullName
+          if (-not $manifestPath) {
+              throw 'A module manifest was not found in src.'
+          }
+
+          $manifest = Import-PowerShellDataFile -Path $manifestPath
+          foreach ($requiredModule in @($manifest.RequiredModules)) {
+              if ($requiredModule -is [String]) {
+                  $moduleName = $requiredModule
+                  $availableSpecification = @{ ModuleName = $moduleName }
+                  $installArguments = @{ Name = $moduleName }
+              }
+              else {
+                  $moduleName = $requiredModule.ModuleName
+                  $availableSpecification = @{ ModuleName = $moduleName }
+                  $installArguments = @{ Name = $moduleName }
+
+                  if ($requiredModule.RequiredVersion) {
+                      $availableSpecification.RequiredVersion = $requiredModule.RequiredVersion
+                      $installArguments.RequiredVersion = $requiredModule.RequiredVersion
+                  }
+                  elseif ($requiredModule.ModuleVersion) {
+                      $availableSpecification.ModuleVersion = $requiredModule.ModuleVersion
+                      $installArguments.MinimumVersion = $requiredModule.ModuleVersion
+                  }
+                  if ($requiredModule.MaximumVersion) {
+                      $availableSpecification.MaximumVersion = $requiredModule.MaximumVersion
+                      $installArguments.MaximumVersion = $requiredModule.MaximumVersion
+                  }
+              }
+
+              if (-not (Get-Module -ListAvailable -FullyQualifiedName $availableSpecification)) {
+                  Install-Module @installArguments -Scope CurrentUser -Force -ErrorAction Stop
+              }
+          }
+
       - name: Build
         id: build
         shell: pwsh
