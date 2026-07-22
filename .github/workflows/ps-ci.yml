@@ -58,13 +58,23 @@ jobs:
         id: build
         shell: pwsh
         run: |
-          $build = ./build.ps1
-          $build
+          $buildOutput = @(./build.ps1)
+          $buildOutput
 
-          $moduleName = $build[1].Name
+          $builtManifest = $buildOutput |
+              Where-Object {
+                  $_ -is [System.IO.FileInfo] -and
+                  $_.Extension -eq '.psd1'
+              } |
+              Select-Object -Last 1
+          if (-not $builtManifest) {
+              throw 'The build did not return a module manifest.'
+          }
+
+          $moduleName = $builtManifest.BaseName
           echo "moduleName=$moduleName" >> $env:GITHUB_OUTPUT
 
-          $moduleVersion = $build[1].ModuleBase | Split-Path -Leaf
+          $moduleVersion = (Import-PowerShellDataFile -Path $builtManifest.FullName).ModuleVersion
           echo "moduleVersion=$moduleVersion" >> $env:GITHUB_OUTPUT
 
       - name: Publish Test Results
