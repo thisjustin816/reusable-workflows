@@ -43,7 +43,9 @@ jobs:
                   }
                   if ($requiredModule.MaximumVersion) {
                       $availableSpecification.MaximumVersion = $requiredModule.MaximumVersion
-                      $installArguments.MaximumVersion = $requiredModule.MaximumVersion
+                      $installArguments.MaximumVersion = (
+                          [String]$requiredModule.MaximumVersion -replace '\*', '999999999'
+                      )
                   }
               }
 
