@@ -10,6 +10,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Build Tool
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $buildToolSpecification = @{
+              ModuleName    = 'PSModuleUtils'
+              ModuleVersion = '2.0.0'
+          }
+          if (-not (Get-Module -ListAvailable -FullyQualifiedName $buildToolSpecification)) {
+              Install-Module `
+                  -Name $buildToolSpecification.ModuleName `
+                  -MinimumVersion $buildToolSpecification.ModuleVersion `
+                  -Scope CurrentUser `
+                  -Force `
+                  -AllowClobber `
+                  -ErrorAction Stop
+          }
+
       - name: Install Module Dependencies
         shell: pwsh
         run: |
