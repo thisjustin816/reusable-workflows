@@ -50,7 +50,7 @@ jobs:
               }
 
               if (-not (Get-Module -ListAvailable -FullyQualifiedName $availableSpecification)) {
-                  Install-Module @installArguments -Scope CurrentUser -Force -ErrorAction Stop
+                  Install-Module @installArguments -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
               }
           }
 
