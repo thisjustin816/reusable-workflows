@@ -76,14 +76,14 @@ jobs:
           else {
               $moduleSpecification = @{
                   ModuleName     = 'PSModuleUtils'
-                  ModuleVersion  = '2.0.0'
-                  MaximumVersion = '2.*'
+                  ModuleVersion  = '4.0.0'
+                  MaximumVersion = '4.*'
               }
               if (-not (Get-Module -ListAvailable -FullyQualifiedName $moduleSpecification)) {
                   Install-Module `
                       -Name 'PSModuleUtils' `
-                      -MinimumVersion '2.0.0' `
-                      -MaximumVersion '2.*' `
+                      -MinimumVersion '4.0.0' `
+                      -MaximumVersion '4.*' `
                       -Scope CurrentUser `
                       -Force `
                       -ErrorAction Stop
@@ -106,8 +106,7 @@ jobs:
 
           Invoke-PSModuleAnalyzer `
               -SourceDirectory $env:INPUT_PATH `
-              -Settings $settingsPath `
-              -NoExit |
+              -Settings $settingsPath |
               ConvertTo-SARIF -FilePath 'results.sarif'
 
       - name: Upload SARIF results file
