@@ -100,7 +100,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action/windows@v2
         if: always()
         with:
-          files: tests/testResults.xml
+          files: out/tests/testResults.xml
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET Core
@@ -113,8 +113,8 @@ jobs:
         # https://reportgenerator.io/usage
         uses: danielpalme/ReportGenerator-GitHub-Action@5.5.10
         with:
-          reports: tests/coverage.xml
-          targetdir: tests/coverage
+          reports: out/tests/coverage.xml
+          targetdir: out/tests/coverage
           reporttypes: Cobertura;MarkdownSummaryGithub
           sourcedirs: src
 
@@ -123,7 +123,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           header: code-coverage
-          path: tests/coverage/SummaryGithub.md
+          path: out/tests/coverage/SummaryGithub.md
           skip_unchanged: true
 
       - name: Check for Published Module
