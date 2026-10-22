@@ -12,6 +12,11 @@ name: PSScriptAnalyzer
 on:
   workflow_call:
     inputs:
+      psmoduleutils_version:
+        description: Exact PSModuleUtils release used for analysis when use_local_psmoduleutils is false.
+        required: false
+        type: string
+        default: '4.2.3'
       path:
         description: Source path to analyze.
         required: false
@@ -43,6 +48,7 @@ jobs:
       - name: Run PSScriptAnalyzer
         shell: pwsh
         env:
+          PSMODULEUTILS_VERSION: ${{ inputs.psmoduleutils_version }}
           INPUT_PATH: ${{ inputs.path }}
           INPUT_SETTINGS: ${{ inputs.settings }}
           USE_LOCAL_PSMODULEUTILS: ${{ inputs.use_local_psmoduleutils }}
@@ -50,21 +56,23 @@ jobs:
           $ErrorActionPreference = 'Stop'
 
           if ($env:USE_LOCAL_PSMODULEUTILS -eq 'true') {
-              $scriptAnalyzerSpecification = @{
-                  ModuleName     = 'PSScriptAnalyzer'
-                  ModuleVersion  = '1.20.0'
-                  MaximumVersion = '1.*'
+              $manifest = Import-PowerShellDataFile -Path 'src/PSModuleUtils.psd1'
+              $scriptAnalyzerSpecification = $manifest.RequiredModules |
+                  Where-Object { $_.ModuleName -eq 'PSScriptAnalyzer' } |
+                  Select-Object -First 1
+              if (-not $scriptAnalyzerSpecification) {
+                  throw 'The source manifest must declare PSScriptAnalyzer.'
               }
               if (-not (Get-Module -ListAvailable -FullyQualifiedName $scriptAnalyzerSpecification)) {
                   Install-Module `
                       -Name 'PSScriptAnalyzer' `
-                      -MinimumVersion '1.20.0' `
-                      -MaximumVersion '1.*' `
+                      -MinimumVersion $scriptAnalyzerSpecification.ModuleVersion `
+                      -MaximumVersion $scriptAnalyzerSpecification.MaximumVersion `
                       -Scope CurrentUser `
                       -Force `
                       -ErrorAction Stop
               }
-              Import-Module -FullyQualifiedName $scriptAnalyzerSpecification -Force -ErrorAction Stop
+              Import-Module -FullyQualifiedName $scriptAnalyzerSpecification -ErrorAction Stop
 
               @(
                   'src/Private/Get-PSModuleAnalyzerSettingsPath.ps1'
@@ -75,26 +83,24 @@ jobs:
           }
           else {
               $moduleSpecification = @{
-                  ModuleName     = 'PSModuleUtils'
-                  ModuleVersion  = '4.0.0'
-                  MaximumVersion = '4.*'
+                  ModuleName      = 'PSModuleUtils'
+                  RequiredVersion = [Version]$env:PSMODULEUTILS_VERSION
               }
               if (-not (Get-Module -ListAvailable -FullyQualifiedName $moduleSpecification)) {
                   Install-Module `
                       -Name 'PSModuleUtils' `
-                      -MinimumVersion '4.0.0' `
-                      -MaximumVersion '4.*' `
+                      -RequiredVersion $moduleSpecification.RequiredVersion `
                       -Scope CurrentUser `
                       -Force `
                       -ErrorAction Stop
               }
-              Import-Module -FullyQualifiedName $moduleSpecification -Force -ErrorAction Stop
+              Import-Module -FullyQualifiedName $moduleSpecification -ErrorAction Stop
           }
 
           if (-not (Get-Module -ListAvailable -Name 'ConvertToSARIF')) {
               Install-Module -Name 'ConvertToSARIF' -Scope CurrentUser -Force -ErrorAction Stop
           }
-          Import-Module -Name 'ConvertToSARIF' -Force -ErrorAction Stop
+          Import-Module -Name 'ConvertToSARIF' -ErrorAction Stop
 
           if ($env:INPUT_SETTINGS) {
               $settingsPath = $env:INPUT_SETTINGS
