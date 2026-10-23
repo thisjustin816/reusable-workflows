@@ -2,6 +2,17 @@ name: CI
 
 on:
   workflow_call:
+    inputs:
+      psmoduleutils_version:
+        description: Exact PSModuleUtils release to install before building and testing.
+        required: false
+        type: string
+        default: '4.2.3'
+      publish_module:
+        description: Allow PSGallery publication and GitHub releases after validation.
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   build:
@@ -12,17 +23,19 @@ jobs:
 
       - name: Install Build Tool
         shell: pwsh
+        env:
+          PSMODULEUTILS_VERSION: ${{ inputs.psmoduleutils_version }}
         run: |
           $ErrorActionPreference = 'Stop'
 
           $buildToolSpecification = @{
-              ModuleName    = 'PSModuleUtils'
-              ModuleVersion = '2.0.0'
+              ModuleName      = 'PSModuleUtils'
+              RequiredVersion = [Version]$env:PSMODULEUTILS_VERSION
           }
           if (-not (Get-Module -ListAvailable -FullyQualifiedName $buildToolSpecification)) {
               Install-Module `
                   -Name $buildToolSpecification.ModuleName `
-                  -MinimumVersion $buildToolSpecification.ModuleVersion `
+                  -RequiredVersion $buildToolSpecification.RequiredVersion `
                   -Scope CurrentUser `
                   -Force `
                   -AllowClobber `
@@ -103,7 +116,7 @@ jobs:
           files: out/tests/testResults.xml
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup .NET Core
+      - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.x
@@ -111,7 +124,7 @@ jobs:
 
       - name: Convert Code Coverage to Publishable Cobertura
         # https://reportgenerator.io/usage
-        uses: danielpalme/ReportGenerator-GitHub-Action@5.5.10
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.5.11
         with:
           reports: out/tests/coverage.xml
           targetdir: out/tests/coverage
@@ -127,6 +140,7 @@ jobs:
           skip_unchanged: true
 
       - name: Check for Published Module
+        if: inputs.publish_module
         shell: pwsh
         run: |
           $publishedModule = Find-PSResource `
@@ -143,7 +157,7 @@ jobs:
 
       - name: Publish to PowerShell Gallery
         id: publish
-        if: success() && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
+        if: success() && inputs.publish_module && (github.event.inputs.publish == 'true' || github.ref == 'refs/heads/main')
         shell: pwsh
         run: |
           if (
@@ -157,7 +171,7 @@ jobs:
           PSGALLERYAPIKEY: ${{ secrets.PSGALLERYAPIKEY }}
 
       - name: Create Release
-        if: steps.publish.outcome == 'success' && github.ref == 'refs/heads/main'
+        if: inputs.publish_module && steps.publish.outcome == 'success' && github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
