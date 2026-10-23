@@ -62,3 +62,10 @@ Publish compatible workflow changes first, then the PSModuleUtils release, then
 update callers to select that release. Keep the default version until existing
 callers have migrated. Action references use maintained major tags, except
 ReportGenerator, which uses its published release tag.
+
+## Workflow tests
+
+The `Workflow tests` check runs `tests/DependencyInstallation.Tests.ps1` with Pester 6.2.0.
+It exercises the dependency-installation step from the workflow using temporary module manifests
+and PowerShell's real module lookup. Downloads are mocked. The cases cover name-only dependencies,
+exact versions, version ranges, and installation failures.
