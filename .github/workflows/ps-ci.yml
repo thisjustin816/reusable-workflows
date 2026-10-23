@@ -57,7 +57,7 @@ jobs:
           foreach ($requiredModule in @($manifest.RequiredModules)) {
               if ($requiredModule -is [String]) {
                   $moduleName = $requiredModule
-                  $availableSpecification = @{ ModuleName = $moduleName }
+                  $availableSpecification = $moduleName
                   $installArguments = @{ Name = $moduleName }
               }
               else {
