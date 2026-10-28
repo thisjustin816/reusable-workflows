@@ -92,6 +92,7 @@ jobs:
                       -RequiredVersion $moduleSpecification.RequiredVersion `
                       -Scope CurrentUser `
                       -Force `
+                      -AllowClobber `
                       -ErrorAction Stop
               }
               Import-Module -FullyQualifiedName $moduleSpecification -ErrorAction Stop
