@@ -1,4 +1,5 @@
 BeforeAll {
+    $null = Get-Command -Name Install-Module -ErrorAction Stop
     $path = Join-Path $PSScriptRoot '../.github/workflows/ps-scriptAnalyzer.yml'
     $workflow = Get-Content -LiteralPath $path -Raw
     $pattern = '(?ms)^      - name: Run PSScriptAnalyzer\r?\n.*?        run: \|\r?\n(?<script>.*?)(?=^      - name:|\z)'
